@@ -1,0 +1,230 @@
+package com.HultonHotelReservation.dbaccess;
+
+
+import java.io.PrintStream;
+import java.sql.CallableStatement;
+import java.sql.Statement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.sql.Timestamp;
+import java.util.Date;
+ 
+
+public class Customer extends BASESqlInterface {
+	static Customer instance = new Customer();
+	private int  m_id;
+	private String  m_first_name;
+	private String  m_last_name;
+	private String  m_address;
+	private String  m_login_id;
+	private String  m_password;
+
+	public int  getId () {
+		return m_id;
+	}
+
+	public void  setId (int val) {
+		m_id = val;
+	}
+
+	public String  getFirstName () {
+		return m_first_name;
+	}
+
+	public void  setFirstName (String val) {
+		m_first_name = val;
+	}
+
+	public String  getLastName () {
+		return m_last_name;
+	}
+
+	public void  setLastName (String val) {
+		m_last_name = val;
+	}
+
+	public String  getAddress () {
+		return m_address;
+	}
+
+	public void  setAddress (String val) {
+		m_address = val;
+	}
+
+	public String  getLoginId () {
+		return m_login_id;
+	}
+
+	public void  setLoginId (String val) {
+		m_login_id = val;
+	}
+
+	public String  getPassword () {
+		return m_password;
+	}
+
+	public void  setPassword (String val) {
+		m_password = val;
+	}
+
+	 
+	 
+	public static Customer getInstance() {
+		return instance;
+	}
+	 
+	 
+ 
+
+	public boolean deleteById(Connection conn) {
+		
+		String stmt = "DELETE FROM Customer WHERE ID = ?";
+		CallableStatement cs = null;
+	 
+		try {
+			cs = conn.prepareCall(stmt);
+
+	        cs.setInt(1, m_id);
+ 
+			cs.execute();
+			return true;
+		} catch (Exception e) {
+			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
+			return false;
+		} finally {
+			closeJdbcResources(null, cs, null);
+		}
+	}
+	
+	static public List<Customer> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("SELECT t.id, t.first_name, t.last_name, t.address, t.login_id, t.password FROM Customer t ");
+		sb.append(joindAndWhereStr );
+		
+		String stmt = sb.toString();
+		PreparedStatement cs = null;
+		ResultSet rs = null;
+
+		try {
+			cs = conn.prepareStatement(stmt);
+        	if(params.length > 0) {
+				int idx = 1;
+				for(String arg : params)
+					cs.setString(idx++, arg);
+			}
+			rs = cs.executeQuery();
+			ArrayList<Customer> list = new ArrayList<Customer>();
+			while(rs.next()) {
+				Customer obj = instance.getNextRow(rs, 1);
+				// obj.printRow(System.out);
+				list.add(obj);
+			}
+			return list;
+		} catch (Exception e) {
+			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
+			return null;
+		}  finally {
+			closeJdbcResources(null, cs, null);
+		}
+	}
+
+ 
+	static public Customer fetchById(Connection conn, String id) {
+		String stmt =  "SELECT t.id, t.first_name, t.last_name, t.address, t.login_id, t.password FROM Customer t  WHERE ID = ?";
+		PreparedStatement cs = null;
+		ResultSet rs = null;
+
+		try {
+			cs = conn.prepareStatement(stmt);
+	        cs.setString(1, id);
+            rs = cs.executeQuery();
+			Customer newobj = null;
+            if(rs.next()) {
+            	newobj = instance.getNextRow(rs, 1);
+            }
+			return newobj;
+		} catch (Exception e) {
+			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
+			return null;
+		} finally {
+			closeJdbcResources(null, cs, rs);
+		}
+	}
+	 
+	 
+	public  int insertRecord(Connection connection) throws SQLException {
+	    PreparedStatement cs = null;
+		String stmt = "INSERT into Customer(id, first_name, last_name, address, login_id, password ) VALUES (?,?,?,?,?,?)";
+	    try {
+	        cs = connection.prepareStatement(stmt, Statement.RETURN_GENERATED_KEYS);
+			int idx = 1;
+			       	cs.setInt(idx++, m_id);
+	    			       	cs.setString(idx++, m_first_name);
+	    			       	cs.setString(idx++, m_last_name);
+	    			       	cs.setString(idx++, m_address);
+	    			       	cs.setString(idx++, m_login_id);
+	    			       	cs.setString(idx++, m_password);
+	    		 	cs.executeUpdate();
+		 	int autoIncKeyFromApi = -1;
+
+		    ResultSet rs = cs.getGeneratedKeys();
+		
+		    if (rs != null && rs.next()) {
+		        autoIncKeyFromApi = rs.getInt(1);
+		    } else {
+		
+		        System.err.println("Failed to execute: retrieve GeneratedKeys ");
+		        autoIncKeyFromApi = 0;
+		    }
+			return autoIncKeyFromApi;
+	    } catch (Exception e) {
+			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
+			return -1;
+	    } finally {
+	        closeJdbcResources(null, cs, null);
+	    }
+	}
+ 
+	public void printRow(PrintStream out) throws SQLException {
+				out.println("id = " + m_id);
+				out.println("first_name = " + m_first_name);
+				out.println("last_name = " + m_last_name);
+				out.println("address = " + m_address);
+				out.println("login_id = " + m_login_id);
+				out.println("password = " + m_password);
+	}
+	 public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("id = " + m_id);
+		sb.append(";first_name = " + m_first_name);
+		sb.append(";last_name = " + m_last_name);
+		sb.append(";address = " + m_address);
+		sb.append(";login_id = " + m_login_id);
+		sb.append(";password = " + m_password);
+		return sb.toString();
+    }
+
+ 
+	public  Customer getNextRow(ResultSet rs, int idx) throws SQLException {
+			Customer obj = new Customer();
+			 
+			obj.m_id =  rs.getInt(idx++);
+			obj.m_first_name =  rs.getString(idx++);
+			obj.m_last_name =  rs.getString(idx++);
+			obj.m_address =  rs.getString(idx++);
+			obj.m_login_id =  rs.getString(idx++);
+			obj.m_password =  rs.getString(idx++);
+			 
+			return obj;
+	}
+}
+
+
