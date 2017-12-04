@@ -71,10 +71,10 @@ public class SigninRequest {
 			customer.setLoginId(username);
 			customer.setPassword(password);
 			
-			customer.insertRecord(connection);
+			int user_id = customer.insertRecord(connection);
 
 			
-			userAuth.setUserId(customer.getId());
+			userAuth.setUserId(user_id);
 			userAuth.setLoginId(username);
 			
 			session.setAttribute("auth", userAuth);

@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -382,6 +384,13 @@ public class DBAccess {
 
 	}
 
+	private static java.sql.Date strToSqlDate(String datestr) throws ParseException {
+		java.util.Date date = new SimpleDateFormat("yyyy-MM-dd").parse(datestr);
+		java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+		return sqlDate;
+	}
+	      
+	 
 	private static void addRoom(JSONObject rooms, String[] fields) {
 		JSONObject room = new JSONObject();
 
@@ -453,11 +462,12 @@ public class DBAccess {
 				totalprice += BASESqlInterface.parseFloat(str);
 
 				str = (String) jroom.get("checkin");
-				// roomoption.setCheckin(roomoption.parseDate(str));
-				roomoption.setCheckin(new java.sql.Date(new java.util.Date().getTime()));
+				 
+				roomoption.setCheckin(strToSqlDate(str));
+			 
 				str = (String) jroom.get("checkout");
-				// roomoption.setCheckout(roomoption.parseDate(str));
-				roomoption.setCheckout(new java.sql.Date(new java.util.Date().getTime()));
+				 
+				roomoption.setCheckout(strToSqlDate(str));
 				roomoption.setReservationId(reservationId);
 				System.out.println("Request: " + jsonrequest.toJSONString());
 				int roomRecordId = roomoption.insertRecord(connection);
@@ -495,8 +505,8 @@ public class DBAccess {
 					servicetoption.insertRecord(connection);
 				}
 			}
-			reservation.update(connection, "update Reservation set total_cost = ? where id = ?", "" + totalprice,
-					"" + reservationId);
+			reservation.update(connection, "update Reservation set total_cost = ? where id = ?", "" + totalprice, "" + reservationId);
+			System.out.println("Reservation Done");
 			connection.commit();
 		} finally {
 			connection.setAutoCommit(true);

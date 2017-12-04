@@ -151,8 +151,6 @@ CREATE TABLE RoomOption (
  PRIMARY KEY (id),
     FOREIGN KEY (room_id)
         REFERENCES Room (id),
-	FOREIGN KEY (discount_id)
-        REFERENCES Discount (id),
 	FOREIGN KEY (reservation_id)
         REFERENCES Reservation (id)
 );
