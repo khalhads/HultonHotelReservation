@@ -2,6 +2,9 @@ USE HultonHotelReservation;
 
 insert into Hotel (id ) values(1), (2);
 
+insert into Customer (first_name, last_name, address, login_id, password)
+values('tester', 'tester', 'Lab', 'tester', 'tester');
+			 
 insert into Admin (  id , first_name, last_name , login_id,password)
 	values(1, 'John', 'Doe', 'john', 'johndoe'),
 			(2, 'Jane', 'Doe', 'jane', 'janedoe');
@@ -66,7 +69,18 @@ select * from Discount;
 select * from Customer;
 select * from Reservation;
 select * from Admin;
+select * from Review;
 
+select rm.hotel_id, rm.room_no, rm.room_type, rm.price, rm.description, rm.floor_no, rm.max_people, rm.id,
+	ro.id, ro.discount_id, ro.reservation_id, ro.checkIn, ro.checkOut Date
+				 FROM   Room rm, RoomOption ro, Reservation rs 
+				 where rm.id = ro.room_id AND ro.reservation_id = rs.id AND rs.customer_id = 1
+				 order by rm.hotel_id;
+                
+                
+select rm.hotel_id, rm.id, ro.id, ro.discount_id, ro.reservation_id, ro.checkIn, ro.checkOut Date 
+FROM   Room rm, RoomOption ro, Reservation rs 
+where rm.id = ro.room_id AND ro.reservation_id = rs.id AND rs.customer_id = 1             
 
 */
 

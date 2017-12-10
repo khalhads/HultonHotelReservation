@@ -53,10 +53,7 @@ public class Breakfastoption extends BASESqlInterface {
 		return instance;
 	}
 	 
-	 
  
- 
-	
 	static public List<Breakfastoption> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
 		
 		StringBuffer sb = new StringBuffer();

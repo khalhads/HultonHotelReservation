@@ -26,8 +26,10 @@ import com.HultonHotelReservation.dbaccess.BASESqlInterface;
 import com.HultonHotelReservation.dbaccess.Breakfast;
 import com.HultonHotelReservation.dbaccess.Breakfastoption;
 import com.HultonHotelReservation.dbaccess.Creditcard;
+import com.HultonHotelReservation.dbaccess.Customer;
 import com.HultonHotelReservation.dbaccess.Hotel;
 import com.HultonHotelReservation.dbaccess.Reservation;
+import com.HultonHotelReservation.dbaccess.Review;
 import com.HultonHotelReservation.dbaccess.Room;
 import com.HultonHotelReservation.dbaccess.Roomoption;
 import com.HultonHotelReservation.dbaccess.Service;
@@ -78,94 +80,8 @@ public class DBAccess {
 		return true;
 	}
 
-	public static void printAvailableRooms(String hotel_id, JspWriter out) {
-		Connection connection = null;
-		try {
-			connection = dataSource.getConnection();
-			List<Room> list = Room.fetchWithJoin(connection, " where t.hotel_id = ?", hotel_id);
-			if (list != null && list.size() > 0) {
-				for (Room r : list)
-					out.println("<option value='" + r.getId() + "'>" + "Room: " + r.getRoomNo() + ", Floor: "
-							+ r.getFloorNo() + ", Type: " + r.getRoomType() + ", Capacity: " + r.getMaxPeople()
-							+ "</option>");
-			}
-		} catch (Exception e) {
-			try {
-				out.println("<option value='0'>No Rooms available currently</option>");
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-		} finally {
-			if (connection != null)
-				try {
-					connection.close();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		}
-
-	}
-
-	public static void printAvailableBreakfasts(String hotel_id, JspWriter out) {
-		Connection connection = null;
-		try {
-			connection = dataSource.getConnection();
-			List<Breakfast> list = Breakfast.fetchWithJoin(connection, " where t.hotel_id = ?", hotel_id);
-			if (list != null && list.size() > 0) {
-				for (Breakfast b : list)
-					out.println("<option value='" + b.getId() + "'>" + "Breakfast type: " + b.getType() + "</option>");
-			}
-		} catch (Exception e) {
-			try {
-				out.println("<option value='0'>No Breakfast available currently</option>");
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-		} finally {
-			if (connection != null)
-				try {
-					connection.close();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		}
-	}
-
-	public static void printAvailableServices(String hotel_id, JspWriter out) {
-		Connection connection = null;
-		try {
-			connection = dataSource.getConnection();
-			List<Service> list = Service.fetchWithJoin(connection, " where t.hotel_id = ?", hotel_id);
-			if (list != null && list.size() > 0) {
-				for (Service s : list)
-					out.println("<option value='" + s.getId() + "'>" + "Service type: " + s.getType() + "</option>");
-			}
-		} catch (Exception e) {
-			try {
-				out.println("<option value='0'>No Breakfast available currently</option>");
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-		} finally {
-			if (connection != null)
-				try {
-					connection.close();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		}
-	}
-
 	private static JSONObject s_hotel_db = null;
+	private static HashMap<String, JSONObject> byHotel = new HashMap<String, JSONObject>();
 	private static HashMap<String, JSONObject> byRoom = new HashMap<String, JSONObject>();
 	private static HashMap<String, JSONObject> byBreakfast = new HashMap<String, JSONObject>();
 	private static HashMap<String, JSONObject> byService = new HashMap<String, JSONObject>();
@@ -203,22 +119,91 @@ public class DBAccess {
 		return jsondb;
 	}
 
+	public static JSONObject populateReservations(HttpSession session, Connection connection, JSONObject jsonrequest) {
+		JSONArray hotels = new JSONArray();
+		JSONObject jsonResponse = new JSONObject();
+		String m_customer_id = (String) jsonrequest.get("m_customer_id");
+		
+		jsonResponse.put("m_status_code", 1);
+		jsonResponse.put("m_status_msg", "");
+		
+		jsonResponse.put("hotels", hotels);
+		String ReservationQuery = "select rm.hotel_id, rm.id, ro.id, ro.discount_id, ro.reservation_id, ro.checkIn, ro.checkOut, rs.id "
+				+ "FROM   Room rm, RoomOption ro, Reservation rs "
+				+ "where rm.id = ro.room_id AND ro.reservation_id = rs.id AND rs.customer_id = ? "
+				+ "order by rs.id";
+		 
+		if(m_customer_id == null) {
+			UserAuth userAuth = (UserAuth) session.getAttribute("auth");
+			if (userAuth == null)
+				return jsonResponse;
+			m_customer_id = "" + userAuth.getUserId();
+		}
+		
+		List<String[]> rows = Hotel.fetchQueryResult(connection, ReservationQuery, m_customer_id);
+
+		if (rows == null || rows.size() == 0)
+			return jsonResponse;
+
+		JSONObject nextReservation = null;
+		JSONArray rooms = null;
+		String reservation_id = "";
+		for (int i = 0; i < rows.size(); i++) {
+			String[] fields = rows.get(i);
+			if (!reservation_id.equals(fields[7])) {
+				reservation_id = fields[7];
+				nextReservation = new JSONObject(byHotel.get(fields[0]));
+				hotels.add(nextReservation);
+				rooms = new JSONArray();
+				nextReservation.put("rooms", rooms);
+				nextReservation.put("reservation_id", reservation_id);
+
+			}
+			JSONObject room = new JSONObject(byRoom.get(fields[1]));
+			room.put("checkin", fields[5]);
+			room.put("checkout", fields[6]);
+			rooms.add(room);
+			JSONArray breakfasts = new JSONArray();
+			JSONArray services = new JSONArray();
+			room.put("breakfasts", breakfasts);
+			room.put("services", services);
+
+			List<Breakfastoption> blist = Breakfastoption.fetchWithJoin(connection,
+					", RoomOption ro where t.roomoption_id = ro.id AND ro.room_id = ?", fields[1]);
+			List<Serviceoption> slist = Serviceoption.fetchWithJoin(connection,
+					", RoomOption ro where t.roomoption_id = ro.id AND ro.room_id = ?", fields[1]);
+
+			for (Breakfastoption bo : blist) {
+				breakfasts.add(new JSONObject(byBreakfast.get("" + bo.getBreakfastId())));
+			}
+			for (Serviceoption so : slist) {
+				services.add(new JSONObject(byService.get("" + so.getServiceId())));
+			}
+
+		}
+
+		return jsonResponse;
+	}
+
 	private static void populateRooms(Connection connection, JSONObject jsondb, JSONObject countries) {
 		String hotelDbQuery = "select h.hotel_id, h.street, h.city, h.state, h.country, "
 				+ "r.room_no, r.room_type, r.price, r.description, r.floor_no, r.max_people, r.id "
 				+ " FROM HotelAddress h , Room r where r.hotel_id = h.hotel_id" + "  order by h.country, h.state";
 
+		List<String[]> rows = Hotel.fetchQueryResult(connection, hotelDbQuery);
+
+		if (rows == null || rows.size() == 0)
+			return;
+		processRooms(rows, jsondb, countries);
+	}
+
+	private static void processRooms(List<String[]> rows, JSONObject jsondb, JSONObject countries) {
 		String countryName = "";
 		String stateName = "";
 		JSONObject states = new JSONObject();
 		String hotelId = "";
 		JSONObject hotels = new JSONObject();
 		JSONObject rooms = new JSONObject();
-
-		List<String[]> rows = Hotel.fetchQueryResult(connection, hotelDbQuery);
-
-		if (rows == null || rows.size() == 0)
-			return;
 
 		for (int i = 0; i < rows.size(); i++) {
 			String[] fields = rows.get(i);
@@ -228,6 +213,7 @@ public class DBAccess {
 						addRoom(rooms, fields);
 					} else {
 						hotelId = fields[0];
+
 						addHotel(hotels, rooms, fields);
 					}
 				} else {
@@ -286,7 +272,10 @@ public class DBAccess {
 
 		if (rows == null || rows.size() == 0)
 			return;
+		processBreakfasts(rows, jsondb, countries);
+	}
 
+	private static void processBreakfasts(List<String[]> rows, JSONObject jsondb, JSONObject countries) {
 		JSONObject hotel = null;
 		JSONObject breakfasts = null;
 		String hotel_id = "";
@@ -325,7 +314,10 @@ public class DBAccess {
 
 		if (rows == null || rows.size() == 0)
 			return;
+		populateServices(rows, jsondb, countries);
+	}
 
+	private static void populateServices(List<String[]> rows, JSONObject jsondb, JSONObject countries) {
 		JSONObject hotel = null;
 		JSONObject services = null;
 		String hotel_id = "";
@@ -380,6 +372,10 @@ public class DBAccess {
 		hotel.put("city", fields[2]);
 		hotel.put("state", fields[3]);
 		hotel.put("country", fields[4]);
+
+		JSONObject newHotel = new JSONObject(hotel);
+		byHotel.put(fields[0], newHotel);
+
 		addRoom(rooms, fields);
 
 	}
@@ -389,8 +385,7 @@ public class DBAccess {
 		java.sql.Date sqlDate = new java.sql.Date(date.getTime());
 		return sqlDate;
 	}
-	      
-	 
+
 	private static void addRoom(JSONObject rooms, String[] fields) {
 		JSONObject room = new JSONObject();
 
@@ -414,14 +409,7 @@ public class DBAccess {
 		return s_hotel_db;
 	}
 
-	/*
-	 * { "m_request_type":"reserve", "rooms":[ { "id":1,
-	 * "checkin":"\"2017-12-06\"", "checkout":"\"2017-12-04\"",
-	 * "roomBreakfasts":[{"id":1,"count":1}], "roomServices":[{"id":1}] } ],
-	 * "cardinfo":{"card_owner":"eee","card_no":"eeee","card_type":"3",
-	 * "security_code":"345","expiration_date":"2017-12-05","billing_address":
-	 * "ddddd"} ] }
-	 */
+	 
 	public static JSONObject reserveRequest(HttpSession session, Connection connection, String request_type,
 			JSONObject jsonrequest) throws ParseException, SQLException {
 		System.out.println("Request: " + jsonrequest.toJSONString());
@@ -462,11 +450,11 @@ public class DBAccess {
 				totalprice += BASESqlInterface.parseFloat(str);
 
 				str = (String) jroom.get("checkin");
-				 
+
 				roomoption.setCheckin(strToSqlDate(str));
-			 
+
 				str = (String) jroom.get("checkout");
-				 
+
 				roomoption.setCheckout(strToSqlDate(str));
 				roomoption.setReservationId(reservationId);
 				System.out.println("Request: " + jsonrequest.toJSONString());
@@ -505,7 +493,8 @@ public class DBAccess {
 					servicetoption.insertRecord(connection);
 				}
 			}
-			reservation.update(connection, "update Reservation set total_cost = ? where id = ?", "" + totalprice, "" + reservationId);
+			reservation.update(connection, "update Reservation set total_cost = ? where id = ?", "" + totalprice,
+					"" + reservationId);
 			System.out.println("Reservation Done");
 			connection.commit();
 		} finally {
@@ -517,6 +506,93 @@ public class DBAccess {
 		jsonResponse.put("m_status_code", 1);
 		jsonResponse.put("m_status_msg", "");
 		jsonResponse.put("m_invoice_id", "" + reservationId);
+		return jsonResponse;
+	}
+
+	public static JSONObject saveReview(HttpSession session, Connection connection, String request_type,
+			JSONObject jsonrequest) {
+		JSONObject jsonResponse = new JSONObject();
+		try {
+
+			String rating = (String) jsonrequest.get("m_rating");
+			String description = (String) jsonrequest.get("m_description");
+			String review_type = (String) jsonrequest.get("m_review_type");
+			String item_id = (String) jsonrequest.get("m_item_id");
+			
+			Review review = new Review();
+
+			review.setItemId(Integer.parseInt(item_id));
+			review.setDescription(description);
+			review.setRating(Integer.parseInt(rating));
+			review.setReviewType(review_type);
+			review.insertRecord(connection);
+
+			jsonResponse.put("m_status_code", 1);
+			jsonResponse.put("m_status_msg", "");
+		} catch (Exception e) {
+			jsonResponse.put("m_status_code", -1);
+			jsonResponse.put("m_status_msg", "Failed to add a Review: " + e);
+		}
+		return jsonResponse;
+	}
+
+	public static JSONObject checkIfRoomReserved(HttpSession session, Connection connection, String request_type,
+			JSONObject jsonrequest) {
+		JSONObject jsonResponse = new JSONObject();
+		try {
+			String checkin = (String) jsonrequest.get("checkin");
+			String checkout = (String) jsonrequest.get("checkout");
+			String room_id = (String) jsonrequest.get("room_id");
+			Review review = new Review();
+			List<Roomoption> list = Roomoption.fetchWithJoin(connection, " where t.room_id = ? AND (" +
+																				"(t.checkIn <= STR_TO_DATE(?, '%Y-%m-%d') AND t.checkIn >= STR_TO_DATE(?, '%Y-%m-%d')) OR " +
+																				"(t.checkIn <= STR_TO_DATE(?, '%Y-%m-%d') AND t.checkIn >= STR_TO_DATE(?, '%Y-%m-%d'))" +
+																				")", room_id, checkin, checkin,  checkout, checkout);
+
+			if(list != null && list.size() > 0) {
+				jsonResponse.put("m_status_code", -1);
+				jsonResponse.put("m_status_msg", "This room is reserved from: " + list.get(0).getCheckin() + " to: " + list.get(0).getCheckout());
+			} else {
+				jsonResponse.put("m_status_code", 1);
+				jsonResponse.put("m_status_msg", "");
+			}
+			
+		} catch (Exception e) {
+			jsonResponse.put("m_status_code", -1);
+			jsonResponse.put("m_status_msg", "Failed to add a Review: " + e);
+		}
+		return jsonResponse;
+	}
+
+	public static JSONObject searchForCustomer(HttpSession session, Connection connection, String request_type,
+			JSONObject jsonrequest) {
+		JSONObject jsonResponse = new JSONObject();
+		try {
+			String name = (String) jsonrequest.get("name");
+			name = "%" + name + "%";
+			List<Customer> customers = Customer.fetchWithJoin(connection, " where CONCAT(t.first_name, ' ', t.last_name) like ?", name);
+
+			if(customers != null && customers.size() == 0) {
+				jsonResponse.put("m_status_code", -1);
+				jsonResponse.put("m_status_msg", "No customer found ");
+			} else {
+				jsonResponse.put("m_status_code", 1);
+				jsonResponse.put("m_status_msg", "");
+				JSONArray entities = new JSONArray();
+				for(Customer c : customers) {
+					JSONObject entity = new JSONObject();
+				 
+					entity.put("Id", c.getId() + "");
+					entity.put("Title", c.getFirstName() + " " + c.getLastName());
+					entities.add(entity);
+				}
+				jsonResponse.put("entities", entities);
+			}
+			
+		} catch (Exception e) {
+			jsonResponse.put("m_status_code", -1);
+			jsonResponse.put("m_status_msg", "Failed to add a Review: " + e);
+		}
 		return jsonResponse;
 	}
 

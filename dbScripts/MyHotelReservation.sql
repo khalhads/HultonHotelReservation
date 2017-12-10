@@ -180,13 +180,12 @@ CREATE TABLE BreakfastOption (
 
 
 -- DROP TABLE IF  EXISTS Review;
+-- item_id is the ID of room or breakfast or service
 CREATE TABLE Review (
     id  INT NOT NULL AUTO_INCREMENT,
-    customer_id INT,
-    review_type INT,
+    item_id  INT NOT NULL,  
+    review_type VARCHAR(1),
     rating      INT,
     description VARCHAR(255),
-    PRIMARY KEY (ID),
-    FOREIGN KEY (customer_id)
-        REFERENCES Customer (id)
+    PRIMARY KEY (ID)
 );

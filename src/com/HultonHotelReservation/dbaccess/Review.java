@@ -20,8 +20,8 @@ import java.util.Date;
 public class Review extends BASESqlInterface {
 	static Review instance = new Review();
 	private int  m_id;
-	private int  m_customer_id;
-	private int  m_review_type;
+	private int  m_item_id;
+	private String  m_review_type;
 	private int  m_rating;
 	private String  m_description;
 
@@ -33,19 +33,19 @@ public class Review extends BASESqlInterface {
 		m_id = val;
 	}
 
-	public int  getCustomerId () {
-		return m_customer_id;
+	public int  getItemId () {
+		return m_item_id;
 	}
 
-	public void  setCustomerId (int val) {
-		m_customer_id = val;
+	public void  setItemId (int val) {
+		m_item_id = val;
 	}
 
-	public int  getReviewType () {
+	public String  getReviewType () {
 		return m_review_type;
 	}
 
-	public void  setReviewType (int val) {
+	public void  setReviewType (String val) {
 		m_review_type = val;
 	}
 
@@ -71,33 +71,11 @@ public class Review extends BASESqlInterface {
 		return instance;
 	}
 	 
-	 
  
-
-	public boolean deleteById(Connection conn) {
-		
-		String stmt = "DELETE FROM Review WHERE ID = ?";
-		CallableStatement cs = null;
-	 
-		try {
-			cs = conn.prepareCall(stmt);
-
-	        cs.setInt(1, m_id);
- 
-			cs.execute();
-			return true;
-		} catch (Exception e) {
-			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
-			return false;
-		} finally {
-			closeJdbcResources(null, cs, null);
-		}
-	}
-	
 	static public List<Review> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
 		
 		StringBuffer sb = new StringBuffer();
-		sb.append("SELECT t.id, t.customer_id, t.review_type, t.rating, t.description FROM Review t ");
+		sb.append("SELECT t.id, t.item_id, t.review_type, t.rating, t.description FROM Review t ");
 		sb.append(joindAndWhereStr );
 		
 		String stmt = sb.toString();
@@ -129,7 +107,7 @@ public class Review extends BASESqlInterface {
 
  
 	static public Review fetchById(Connection conn, String id) {
-		String stmt =  "SELECT t.id, t.customer_id, t.review_type, t.rating, t.description FROM Review t  WHERE ID = ?";
+		String stmt =  "SELECT t.id, t.item_id, t.review_type, t.rating, t.description FROM Review t  WHERE ID = ?";
 		PreparedStatement cs = null;
 		ResultSet rs = null;
 
@@ -153,13 +131,13 @@ public class Review extends BASESqlInterface {
 	 
 	public  int insertRecord(Connection connection) throws SQLException {
 	    PreparedStatement cs = null;
-		String stmt = "INSERT into Review(id, customer_id, review_type, rating, description ) VALUES (?,?,?,?,?)";
+		String stmt = "INSERT into Review(id, item_id, review_type, rating, description ) VALUES (?,?,?,?,?)";
 	    try {
 	        cs = connection.prepareStatement(stmt, Statement.RETURN_GENERATED_KEYS);
 			int idx = 1;
 			       	cs.setInt(idx++, m_id);
-	    			       	cs.setInt(idx++, m_customer_id);
-	    			       	cs.setInt(idx++, m_review_type);
+	    			       	cs.setInt(idx++, m_item_id);
+	    			       	cs.setString(idx++, m_review_type);
 	    			       	cs.setInt(idx++, m_rating);
 	    			       	cs.setString(idx++, m_description);
 	    		 	cs.executeUpdate();
@@ -185,7 +163,7 @@ public class Review extends BASESqlInterface {
  
 	public void printRow(PrintStream out) throws SQLException {
 				out.println("id = " + m_id);
-				out.println("customer_id = " + m_customer_id);
+				out.println("item_id = " + m_item_id);
 				out.println("review_type = " + m_review_type);
 				out.println("rating = " + m_rating);
 				out.println("description = " + m_description);
@@ -193,7 +171,7 @@ public class Review extends BASESqlInterface {
 	 public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("id = " + m_id);
-		sb.append(";customer_id = " + m_customer_id);
+		sb.append(";item_id = " + m_item_id);
 		sb.append(";review_type = " + m_review_type);
 		sb.append(";rating = " + m_rating);
 		sb.append(";description = " + m_description);
@@ -205,8 +183,8 @@ public class Review extends BASESqlInterface {
 			Review obj = new Review();
 			 
 			obj.m_id =  rs.getInt(idx++);
-			obj.m_customer_id =  rs.getInt(idx++);
-			obj.m_review_type =  rs.getInt(idx++);
+			obj.m_item_id =  rs.getInt(idx++);
+			obj.m_review_type =  rs.getString(idx++);
 			obj.m_rating =  rs.getInt(idx++);
 			obj.m_description =  rs.getString(idx++);
 			 

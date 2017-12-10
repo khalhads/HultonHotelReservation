@@ -3,14 +3,18 @@ package com.HultonHotelReservation.dbaccess;
 
 import java.io.PrintStream;
 import java.sql.CallableStatement;
+import java.sql.Statement;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.text.ParseException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.sql.Timestamp;
+import java.util.Date;
  
 
 public class Reservation extends BASESqlInterface {
@@ -67,29 +71,7 @@ public class Reservation extends BASESqlInterface {
 		return instance;
 	}
 	 
-	 
  
-
-	public boolean deleteById(Connection conn) {
-		
-		String stmt = "DELETE FROM Reservation WHERE ID = ?";
-		CallableStatement cs = null;
-	 
-		try {
-			cs = conn.prepareCall(stmt);
-
-	        cs.setInt(1, m_id);
- 
-			cs.execute();
-			return true;
-		} catch (Exception e) {
-			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
-			return false;
-		} finally {
-			closeJdbcResources(null, cs, null);
-		}
-	}
-	
 	static public List<Reservation> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
 		
 		StringBuffer sb = new StringBuffer();

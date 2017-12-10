@@ -24,7 +24,7 @@ public abstract class BASESqlInterface {
 	private static final int MAX_SAFE_STRING_SIZE = 4000;
 	private static final String INPUT_FORMAT = "yyyy-mm-dd";
 	private static final String NEW_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
-	private DateFormat dateformat = DateFormat.getInstance();
+	private static DateFormat dateformat = DateFormat.getInstance();
 	static final int INSERT_FLAG = 0;
 	static final int UPDATE_FLAG = 1;
 	private int serial_id = 0;
@@ -55,34 +55,34 @@ public abstract class BASESqlInterface {
  
 	abstract protected  BASESqlInterface getNextRow(ResultSet rs, int idx) throws SQLException;
 	
-	public static int parseInt(String str) {
+	static public int parseInt(String str) {
 		if (str == null || "".equals(str))
 			return 0;
 		return Integer.parseInt(str.trim());
 	}
 
-	public static double parseDouble(String str) {
+	static public double parseDouble(String str) {
 		if (str == null || "".equals(str))
 			return 0.0;
 		return Double.parseDouble(str.trim());
 	}
-	public static  float parseFloat(String str) {
+	static public float parseFloat(String str) {
 		if (str == null || "".equals(str))
 			return 0;
 		return (float) Double.parseDouble(str.trim());
 	}
-	public static String parseString(String str)  {
+	public String parseString(String str)  {
 		if (str == null)
 			return "";
 		return str.trim();
 	}
 
-	Timestamp parseTimestamp(String str) throws ParseException {
-	    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	static Timestamp parseTimestamp(String str) throws ParseException {
+	    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 	    Date parsedDate = dateFormat.parse(str);
 	    return new java.sql.Timestamp(parsedDate.getTime());
 	}
-	public Date parseDate(String str)throws ParseException {
+	static public Date parseDate(String str)throws ParseException {
 		if (str == null)
 			return null;
 		return dateformat.parse(str);

@@ -44,8 +44,7 @@ public class Serviceoption extends BASESqlInterface {
 		return instance;
 	}
 	 
-	 
-	
+ 
 	static public List<Serviceoption> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
 		
 		StringBuffer sb = new StringBuffer();

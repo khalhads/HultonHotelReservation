@@ -71,29 +71,7 @@ public class Breakfast extends BASESqlInterface {
 		return instance;
 	}
 	 
-	 
  
-
-	public boolean deleteById(Connection conn) {
-		
-		String stmt = "DELETE FROM Breakfast WHERE ID = ?";
-		CallableStatement cs = null;
-	 
-		try {
-			cs = conn.prepareCall(stmt);
-
-	        cs.setInt(1, m_id);
- 
-			cs.execute();
-			return true;
-		} catch (Exception e) {
-			System.err.println("Failed to execute: [" + stmt + "], exception: " + e);
-			return false;
-		} finally {
-			closeJdbcResources(null, cs, null);
-		}
-	}
-	
 	static public List<Breakfast> fetchWithJoin(Connection conn, String joindAndWhereStr, String ... params) {
 		
 		StringBuffer sb = new StringBuffer();

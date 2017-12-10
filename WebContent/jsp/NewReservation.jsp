@@ -238,35 +238,49 @@
 				var checkin = $('#checkin_date').val();
 				var checkout = $('#checkout_date').val();
 				
-				var label =  "Room no: " +  room.room_no + ", " + room.floor_no + ", at $" + room.price +
-							" with capcity" + room.max_people + ", Checkin on: " + checkin + ", Checkout on: " + checkout;
-				 
-			 	var roomEntry = `<tr>
-			 						<td>
-			 							<table class='room-entry' id='room-` + room.id + `'>
-			 								<tr>
-			 									<td class="room-info" colspan='5' data-id='` + room_id + 
-			 											`' data-checkin='` + checkin + `' data-checkout='` + checkout + `'>` + label + `</td></tr> 
-			 	  				 		    <tr>
-			 	  				 		    	<td/><td>Breakfasts</td>
-			 	  				 		    	<td colspan='3'>
-			 	  				 		    		<table  class='breakfasts'></table>
-			 	  				 		    	<td>
-			 	  				 		    </tr> 
-			 	     			 			<tr>
-			 	     			 				<td/><td>Services</td>
-			 	     			 				<td colspan='3'>
-			 	     			 					<table  class='services'></table>
-			 	     			 				<td>
-			 	     			 			</tr>
-			 	     			 		</table>
-			 	     			 	</td>
-			 	     			 </tr>`;
-			 	     			 
-			 	reservedRooms.append(roomEntry);
-			 	var $roomEntry = $('#room-' + room.id);
-			 	reservedServices = $('.services', $roomEntry);
-			 	reservedBreakfasts = $('.breakfasts', $roomEntry);
+				var request = {
+						m_request_type : "check-room-reserved",
+						room_id : room_id,
+						checkin : checkin,
+						checkout : checkout
+				}
+				var ajaxRouter = new AjaxRouter();
+				ajaxRouter.sendrequest(request, function(result){ 
+					console.log("Got back %o", result);
+					if(result.m_status_code < 0) {
+						displayAlertMessage(result.m_status_msg );
+						return;
+					} 	
+					var label =  "Room no: " +  room.room_no + ", " + room.floor_no + ", at $" + room.price +
+								" with capcity" + room.max_people + ", Checkin on: " + checkin + ", Checkout on: " + checkout;
+					 
+				 	var roomEntry = `<tr>
+				 						<td>
+				 							<table class='room-entry' id='room-` + room.id + `'>
+				 								<tr>
+				 									<td class="room-info" colspan='5' data-id='` + room_id + 
+				 											`' data-checkin='` + checkin + `' data-checkout='` + checkout + `'>` + label + `</td></tr> 
+				 	  				 		    <tr>
+				 	  				 		    	<td/><td>Breakfasts</td>
+				 	  				 		    	<td colspan='3'>
+				 	  				 		    		<table  class='breakfasts'></table>
+				 	  				 		    	<td>
+				 	  				 		    </tr> 
+				 	     			 			<tr>
+				 	     			 				<td/><td>Services</td>
+				 	     			 				<td colspan='3'>
+				 	     			 					<table  class='services'></table>
+				 	     			 				<td>
+				 	     			 			</tr>
+				 	     			 		</table>
+				 	     			 	</td>
+				 	     			 </tr>`;
+				 	     			 
+				 	reservedRooms.append(roomEntry);
+				 	var $roomEntry = $('#room-' + room.id);
+				 	reservedServices = $('.services', $roomEntry);
+				 	reservedBreakfasts = $('.breakfasts', $roomEntry);
+				});
 			});
 			
 			var addBreakfast = $('#add-breakfast');
@@ -277,7 +291,8 @@
 				var count = breakfastCount.val();
 				var label =  "Breakfast type: " + breakfast.type + ", at $" + breakfast.price + '; count ' + count;
 			 	var td = "<tr><td class='breakfast-entry' colspan='5' data-count='" + count + "' data-id='" + breakfast_id + "'>" + label + "</td></tr>";
-			 	reservedBreakfasts.append(td);
+			 	if(reservedBreakfasts)
+			 		reservedBreakfasts.append(td);
 			});
 			
 			var addService = $('#add-service');
@@ -288,7 +303,8 @@
 			 
 				var label =  "Service type: " + service.type + ", at $" + service.price ;
 			 	var td = "<tr><td class='service-entry' colspan='5' data-id='" + service_id + "'>" + label + "</td></tr>";
-			 	reservedServices.append(td);
+			 	if(reservedServices)
+			 		reservedServices.append(td);
 			});
 		
 		});

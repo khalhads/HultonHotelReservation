@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
 
 import com.HultonHotelReservation.DBAccess;
 import com.HultonHotelReservation.UserAuth;
+import com.HultonHotelReservation.dbaccess.Admin;
 import com.HultonHotelReservation.dbaccess.Customer;
 
 
@@ -24,6 +25,38 @@ public class SigninRequest {
 		String password = (String) jsonrequest.get("password");
 		UserAuth userAuth = new UserAuth();
 		 
+		if ("adminsign".equals(pageType)) {
+			List<Admin> adminList = Admin.fetchWithJoin(connection, " where t.login_id = ? and t.password = ?",
+					username, password);
+			System.out.println("customerList " + adminList);
+			if (adminList == null || adminList.size() == 0) {
+				
+				response.put("m_status_code", -1);
+				response.put("m_status_msg", "<div class='error_message'>Failed to login. Please try again</div>");
+				 
+				return response;
+			}
+		 
+			Admin  admin = adminList.get(0);
+
+			if (password.equals(admin.getPassword()) && username.equals(admin.getLoginId()))
+			{
+				
+				userAuth.setUserId(admin.getId());
+				userAuth.setLoginId(username);
+				
+				session.setAttribute("auth", userAuth);
+				
+				response.put("m_status_code", 1);
+				response.put("m_status_msg", "");
+				
+			} else {
+				response.put("m_status_code", -1);
+				response.put("m_status_msg", "<div class='error_message'>Failed to login. Please try again</div>");	
+				return response;
+			}	
+		}
+		
 		
 		if ("signin".equals(pageType)) {
 			
@@ -58,6 +91,7 @@ public class SigninRequest {
 				return response;
 			}	
 		}
+		
 		if ("signup".equals(pageType)) {
 			String address = (String) jsonrequest.get("address");
 			String passwordRepeat = (String) jsonrequest.get("passwordRepeat");
@@ -82,6 +116,7 @@ public class SigninRequest {
 			response.put("m_status_code", 1);
 			response.put("m_status_msg", "");
 		}
+		
 		
 		return response; 
 	}

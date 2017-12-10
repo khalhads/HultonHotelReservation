@@ -13,7 +13,8 @@ Hotel Reservation System
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/jquery-ui-1.12.1/jquery-ui.css">
  
 <script src="${pageContext.request.contextPath}/jquery-ui-1.12.1/jquery-ui.js" type="text/javascript"></script>
- 
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/AjaxRouter.js"></script> 
  
 </head>
 <body>
@@ -71,7 +72,19 @@ body {
 		maintabs.show();
 		// alert("cacheobj:" +top.cacheobj.toSource());
 		maintabs.tabs();
+		$('#logout').click(function() {
+			var request = {
+		 			m_request_type : "logout"
+		 	}
+			 var ajaxRouter = new AjaxRouter();
+	        ajaxRouter.sendrequest(request, function(result){
+	                console.log("Got back %o", result);
+	                window.location.href = "${pageContext.request.contextPath}/jsp/signup.jsp";
+	        });
+
+		});
 	});
+ 
 </script>
 
 </head>
@@ -83,8 +96,8 @@ body {
 		<ul>
 			<li><a href="#new-reservation">New Reservation</a></li>
 			<li><a href="#list-reservation">List Reservation</a></li>
-			<li><a href="#make-review">Make Review</a></li>
-			<li class="logout"><a href="#log-out">Logout</a></li>
+		
+			<li class="logout"><a id="logout" href="#';">Logout</a></li>
 			 
 		</ul>
 		<div id="main-content">
@@ -95,11 +108,6 @@ body {
 			<iframe id="list-reservation" name="list-reservation"
 						src="${pageContext.request.contextPath}/jsp/ListReservations.jsp"  width="100%" height="97%" frameBorder="0" />
 			</iframe>
-		
-			<iframe id="make-review" name="make-review"
-						src="${pageContext.request.contextPath}/jsp/MakeReview.jsp"  width="100%" height="97%" frameBorder="0" />
-			</iframe>
-	 
 		</div>
 	</div>
 	 

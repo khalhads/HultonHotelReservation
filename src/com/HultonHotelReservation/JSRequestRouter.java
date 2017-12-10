@@ -107,6 +107,8 @@ public class JSRequestRouter {
 
 			
 			switch (request_type) {
+			
+				case "adminsign":
 				case "signin":
 				case "signup": 
 					SigninRequest req = new SigninRequest();
@@ -115,8 +117,25 @@ public class JSRequestRouter {
 				case "fetch-db":
 					jsonResponse = DBAccess.getHotelDb();
 					break;
+				case "logout":
+					jsonResponse = new JSONObject();
+					jsonResponse.put("m_status_code", 1);
+					jsonResponse.put("m_status_msg", "");
+					break;
 				case "reserve":
 					jsonResponse = DBAccess.reserveRequest(session, connection, request_type, jsonrequest);
+					break;	
+				case "save-review":
+					jsonResponse = DBAccess.saveReview(session, connection, request_type, jsonrequest);
+					break;
+				case "check-room-reserved":
+					jsonResponse = DBAccess.checkIfRoomReserved(session, connection, request_type, jsonrequest);
+					break;
+				case "customer-search":
+					jsonResponse = DBAccess.searchForCustomer(session, connection, request_type, jsonrequest);
+					break;
+				case "fetch-reservations":
+					jsonResponse = DBAccess.populateReservations(session, connection, jsonrequest);
 					break;	
 				default:
 					throw new Exception("m_request_type = " + request_type + " is not supported");
